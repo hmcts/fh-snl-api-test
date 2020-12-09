@@ -2,6 +2,10 @@ package uk.gov.hmcts.futurehearings.snl.acceptance.common.test;
 
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createCompletePayloadHeader;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesEmpty;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesNull;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithDestinationSystemValue;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithSourceSystemValue;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createStandardPayloadHeader;
 
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.TestingUtils;
@@ -22,9 +26,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -86,7 +93,7 @@ public abstract class SNLCommonHeaderTest {
         commonDelegate.test_expected_response_for_supplied_header(
                 delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLVerificationDTO(HttpStatus.ACCEPTED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.ACCEPTED, null, null, null));
     }
 
     @Test
@@ -97,7 +104,7 @@ public abstract class SNLCommonHeaderTest {
                 createStandardPayloadHeader(getApiSubscriptionKey()), getHttpSucessStatus());
         commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLVerificationDTO(HttpStatus.ACCEPTED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.ACCEPTED, null, null, null));
     }
 
 
@@ -110,11 +117,10 @@ public abstract class SNLCommonHeaderTest {
                 createStandardPayloadHeader(getApiSubscriptionKey()), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
         commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLVerificationDTO(HttpStatus.UNSUPPORTED_MEDIA_TYPE,null,null,null));
+                new SNLVerificationDTO(HttpStatus.UNSUPPORTED_MEDIA_TYPE, null, null, null));
         RestAssured.config = RestAssured.config()
                 .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(true));
     }
-
 
 
     @Test
@@ -125,15 +131,15 @@ public abstract class SNLCommonHeaderTest {
         commonDelegate.test_expected_response_for_supplied_header(
                 delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLVerificationDTO(HttpStatus.NOT_FOUND,"9999","HTTP 404 Not Found",null));
+                new SNLVerificationDTO(HttpStatus.NOT_FOUND, "9999", "HTTP 404 Not Found", null));
     }
-
 
 
     @Test
     @DisplayName("Successfully validated response with an empty payload")
     public void test_successful_response_for_empty_json_body() throws Exception {
-        this.setInputFileDirectory("common");this.setInputPayloadFileName("empty-json-payload.json");
+        this.setInputFileDirectory("common");
+        this.setInputPayloadFileName("empty-json-payload.json");
         DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
                 createStandardPayloadHeader(getApiSubscriptionKey()), HttpStatus.BAD_REQUEST);
         commonDelegate.test_expected_response_for_supplied_header(
@@ -142,60 +148,35 @@ public abstract class SNLCommonHeaderTest {
                 getSnlVerificationDTO());
     }
 
-   /*
+
     @Test
     @DisplayName("API call with Standard Header but unimplemented METHOD")
-    @Disabled("Initial Setup")
     void test_invalid_REST_method() throws Exception {
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(),
-                getInputPayloadFileName(),
-                createStandardPayloadHeader(getApiSubscriptionKey()),
-                null,
-                getUrlParams(),
-                HttpMethod.OPTIONS,
-                HttpStatus.NOT_FOUND,
-                getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.NOT_FOUND,null,null,null));
+        setHttpMethod(HttpMethod.TRACE);
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createStandardPayloadHeader(getApiSubscriptionKey()), getHttpSucessStatus());
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
+                getHmiSuccessVerifier(),
+                new SNLVerificationDTO(HttpStatus.NOT_FOUND, null, null, null));
     }
-
 
     @Test
     @DisplayName("Headers with all empty and null values")
-    @Disabled("Initial Setup")
     void test_no_headers_populated() throws Exception {
         //2 Sets of Headers Tested - Nulls and Empty
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(),
-                getInputPayloadFileName(),
-                createHeaderWithAllValuesEmpty(),
-                //The Content Type Has to be Populated for Rest Assured to function properly
-                //So this Test was manually executed in Postman Manually as well with the same Order Number
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.UNAUTHORIZED,
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createHeaderWithAllValuesEmpty(), HttpStatus.UNAUTHORIZED);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.UNAUTHORIZED,null,null,null));
-
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(),
-                getInputPayloadFileName(),
-                createHeaderWithAllValuesNull(),
-                //The Content Type Has to be Populated for Rest Assured to function properly
-                //So this Test was manually executed in Postman Manually as well with the same Order Number
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.UNAUTHORIZED,
+                new SNLVerificationDTO(HttpStatus.UNAUTHORIZED, null, null, null));
+        delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createHeaderWithAllValuesNull(), HttpStatus.UNAUTHORIZED);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.UNAUTHORIZED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.UNAUTHORIZED, null, null, null));
     }
 
-
+    /*
     @Test
     @DisplayName("Subscription Key Truncated in the Header")
     @Disabled("Initial Setup")
@@ -244,42 +225,31 @@ public abstract class SNLCommonHeaderTest {
                 getHmiErrorVerifier(),
                 new SNLDTO(HttpStatus.UNAUTHORIZED,null,null,null));
     }
+    */
 
 
     @ParameterizedTest(name = "Source System Header invalid values - Param : {0} --> {1}")
-    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Value, SNL", "Invalid_Source_System, S&L"}, nullValues = "NIL")
-    @Disabled("Initial Setup")
+    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Source_System, SNL","Invalid_Source_System, CfT", "Invalid_Source_System, S&amp;L"}, nullValues = "NIL")
     void test_source_system_invalid_values(String sourceSystemKey, String sourceSystemVal) throws Exception {
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), getInputPayloadFileName(),
-                createHeaderWithSourceSystemValue(getApiSubscriptionKey(), sourceSystemVal),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.BAD_REQUEST,
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createHeaderWithSourceSystemValue(getApiSubscriptionKey(), sourceSystemVal), HttpStatus.BAD_REQUEST);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.UNAUTHORIZED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.BAD_REQUEST, null, null, null));
     }
 
 
     @ParameterizedTest(name = "Destination System Header with invalid values - Param : {0} --> {1}")
-    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Value, SNL", "Invalid_Destination_System, CFT"}, nullValues = "NIL")
-    @Disabled("Initial Setup")
+    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Destination_System, SNL", "Invalid_Destination_System, S&amp;L", "Invalid_Destination_System, CfT"}, nullValues = "NIL")
     void test_destination_system_invalid_values(String destinationSystemKey, String destinationSystemVal) throws Exception {
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), getInputPayloadFileName(),
-                createHeaderWithDestinationSystemValue(getApiSubscriptionKey(), destinationSystemVal),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.BAD_REQUEST,
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createHeaderWithDestinationSystemValue(getApiSubscriptionKey(), destinationSystemVal), HttpStatus.BAD_REQUEST);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.BAD_REQUEST,null,null,null));
+                new SNLVerificationDTO(HttpStatus.BAD_REQUEST, null, null, null));
     }
 
-
+    /*
     @ParameterizedTest(name = "Request Created At System Header invalid values - Param : {0} --> {1}")
     @CsvSource({"Null_Value, null", "Empty_Space,\" \"", "Invalid_Value, value",
             "Invalid_Date_Format, 2002-02-31T10:00:30-05:00Z",

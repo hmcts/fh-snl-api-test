@@ -52,7 +52,6 @@ class POSTHearingsValidationTest extends HearingValidationTest {
         this.setRelativeURLForNotFound(this.getRelativeURL().replace("hearings","hearing"));
         this.setHmiSuccessVerifier(new SNLCommonSuccessVerifier());
         this.setHmiErrorVerifier(new SNLCommonErrorVerifier());
-
     }
 
     @Test
