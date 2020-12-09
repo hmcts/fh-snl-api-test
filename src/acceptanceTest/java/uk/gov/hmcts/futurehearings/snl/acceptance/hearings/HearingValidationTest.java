@@ -45,7 +45,7 @@ public abstract class HearingValidationTest extends SNLCommonHeaderTest {
         RestAssured.useRelaxedHTTPSValidation();
         this.setApiSubscriptionKey("pointless");
         RestAssured.config = RestAssured.config()
-                .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(true));
+                .encoderConfig(encoderConfig().defaultContentCharset("UTF-8").appendDefaultContentCharsetToContentTypeIfUndefined(true));
         this.setInputFileDirectory("hearings");
         String authorizationToken = generateOAuthToken(token_apiURL,
                 token_username,

@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
-public class SNLDTO implements SNLDto {
+public class SNLVerificationDTO implements SNLDto {
 
     public HttpStatus httpStatus;
     public String errorCode;

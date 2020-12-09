@@ -4,13 +4,13 @@ import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHea
 
 import uk.gov.hmcts.futurehearings.snl.Application;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.delegate.CommonDelegate;
-import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLDTO;
+import uk.gov.hmcts.futurehearings.snl.acceptance.common.delegate.dto.DelegateDTO;
+import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLVerificationDTO;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.error.SNLCommonErrorVerifier;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.success.SNLCommonSuccessVerifier;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -53,6 +53,14 @@ class POSTHearingsValidationTest extends HearingValidationTest {
         this.setHmiSuccessVerifier(new SNLCommonSuccessVerifier());
         this.setHmiErrorVerifier(new SNLCommonErrorVerifier());
 
+    }
+
+    @Test
+    @DisplayName("Successfully validated response with an empty payload")
+    @Override
+    public void test_successful_response_for_empty_json_body() throws Exception {
+       this.setSnlVerificationDTO(new SNLVerificationDTO(HttpStatus.BAD_REQUEST,"1004","[$.hearingRequest: is missing but it is required]",null));
+       super.test_successful_response_for_empty_json_body();
     }
 
     //This test is for a Standard Header but a Payload for Non JSON Type is to be tested.

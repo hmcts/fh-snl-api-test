@@ -2,29 +2,16 @@ package uk.gov.hmcts.futurehearings.snl.acceptance.common.test;
 
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createCompletePayloadHeader;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAcceptTypeAtSystemValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesEmpty;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesNull;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithCorruptedHeaderKey;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithDeprecatedHeaderValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithDestinationSystemValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithRemovedHeaderKey;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithRequestCreatedAtSystemValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithRequestProcessedAtSystemValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithRequestTypeAtSystemValue;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithSourceSystemValue;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createStandardPayloadHeader;
-import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createStandardPayloadHeaderWithDuplicateValues;
 
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.TestingUtils;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.delegate.CommonDelegate;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.delegate.dto.DelegateDTO;
-import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLDTO;
+import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLVerificationDTO;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.error.SNLErrorVerifier;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.success.SNLSuccessVerifier;
 
-import java.util.Arrays;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Map;
 
 import io.restassured.RestAssured;
@@ -35,13 +22,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -65,6 +48,7 @@ public abstract class SNLCommonHeaderTest {
     private String outputFileDirectory;
     private String inputPayloadFileName;
     private Map<String, String> urlParams;
+    private SNLVerificationDTO snlVerificationDTO;
 
     @Autowired(required = false)
     public CommonDelegate commonDelegate;
@@ -97,118 +81,68 @@ public abstract class SNLCommonHeaderTest {
     @DisplayName("Successfully validated response with all the header values")
     public void test_successful_response_with_a_complete_header() throws Exception {
 
-        DelegateDTO delegateDTO = DelegateDTO.builder()
-                .targetSubscriptionKey(getApiSubscriptionKey()).authorizationToken(getAuthorizationToken())
-                .targetURL(getRelativeURL())
-                .inputPayload(TestingUtils.readFileContents(String.format(INPUT_FILE_PATH, getInputFileDirectory()) +
-                        "/" + getInputPayloadFileName()))
-                .standardHeaderMap(createCompletePayloadHeader(getApiSubscriptionKey()))
-                .headers(null)
-                .params(getUrlParams())
-                .httpMethod(getHttpMethod())
-                .status(getHttpSucessStatus())
-                .build();
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createCompletePayloadHeader(getApiSubscriptionKey()), getHttpSucessStatus());
         commonDelegate.test_expected_response_for_supplied_header(
                 delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.ACCEPTED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.ACCEPTED,null,null,null));
     }
 
     @Test
     @DisplayName("Successfully validated response with mandatory header values")
     public void test_successful_response_with_a_mandatory_header() throws Exception {
 
-        DelegateDTO delegateDTO = DelegateDTO.builder()
-                .targetSubscriptionKey(getApiSubscriptionKey()).authorizationToken(getAuthorizationToken())
-                .targetURL(getRelativeURL())
-                .inputPayload(TestingUtils.readFileContents(String.format(INPUT_FILE_PATH, getInputFileDirectory()) +
-                        "/" + getInputPayloadFileName()))
-                .standardHeaderMap(createStandardPayloadHeader(getApiSubscriptionKey()))
-                .headers(null)
-                .params(getUrlParams())
-                .httpMethod(getHttpMethod())
-                .status(getHttpSucessStatus())
-                .build();
-
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createStandardPayloadHeader(getApiSubscriptionKey()), getHttpSucessStatus());
         commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.ACCEPTED,null,null,null));
+                new SNLVerificationDTO(HttpStatus.ACCEPTED,null,null,null));
     }
 
 
-   /* @Test
+    @Test
     @DisplayName("Successfully validated response with a valid payload but a ,charset appended to the Content-Type")
-    @Disabled("Initial Setup")
-    void test_successful_response_for_content_type_with_charset_appended() throws Exception {
-        RestAssured.config = RestAssured.config()
-                .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(true));
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), getInputPayloadFileName(),
-                createStandardPayloadHeader(getApiSubscriptionKey()),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                getHttpSucessStatus(),
-                getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.ACCEPTED,null,null,null));
+    void test_successful_response_for_content_type_with_charset_not_appended() throws Exception {
         RestAssured.config = RestAssured.config()
                 .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false));
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createStandardPayloadHeader(getApiSubscriptionKey()), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
+                getHmiSuccessVerifier(),
+                new SNLVerificationDTO(HttpStatus.UNSUPPORTED_MEDIA_TYPE,null,null,null));
+        RestAssured.config = RestAssured.config()
+                .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(true));
     }
+
 
 
     @Test
     @DisplayName("API call with Standard Header but slight Error URL")
-    @Disabled("Initial Setup")
     void test_invalid_URL() throws Exception {
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURLForNotFound(),
+                createStandardPayloadHeader(getApiSubscriptionKey()), HttpStatus.NOT_FOUND);
         commonDelegate.test_expected_response_for_supplied_header(
-                getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURLForNotFound(),
-                //Performed a near to the Real URL Transformation
-                getInputPayloadFileName(),
-                createStandardPayloadHeader(getApiSubscriptionKey()),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.NOT_FOUND,
+                delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.NOT_FOUND,null,null,null));
+                new SNLVerificationDTO(HttpStatus.NOT_FOUND,"9999","HTTP 404 Not Found",null));
     }
-*/
-    /*@Test
-    @DisplayName("Successfully validated response with mandatory header values")
-    void test_successful_response_with_a_mandatory_header() throws Exception {
 
-        String inputPayload = TestingUtils.readFileContents(String.format(INPUT_FILE_PATH, getInputFileDirectory()) + "/" + getInputPayloadFileName());
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), inputPayload,
-                createStandardPayloadHeader(getApiSubscriptionKey()),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                getHttpSucessStatus(),
-                getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.ACCEPTED,null,null,null));
-    }
+
 
     @Test
     @DisplayName("Successfully validated response with an empty payload")
-    @Disabled("Initial Setup")
-    void test_successful_response_for_empty_json_body() throws Exception {
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), "empty-json-payload.json",
-                createStandardPayloadHeader(getApiSubscriptionKey()),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                getHttpSucessStatus(),
-                getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.ACCEPTED,null,null,null));
+    public void test_successful_response_for_empty_json_body() throws Exception {
+        this.setInputFileDirectory("common");this.setInputPayloadFileName("empty-json-payload.json");
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createStandardPayloadHeader(getApiSubscriptionKey()), HttpStatus.BAD_REQUEST);
+        commonDelegate.test_expected_response_for_supplied_header(
+                delegateDTO,
+                getHmiErrorVerifier(),
+                getSnlVerificationDTO());
     }
 
+   /*
     @Test
     @DisplayName("API call with Standard Header but unimplemented METHOD")
     @Disabled("Initial Setup")
@@ -598,4 +532,20 @@ public abstract class SNLCommonHeaderTest {
                 new SNLDTO(HttpStatus.BAD_REQUEST,null,null,null));
 
     }*/
+
+    public DelegateDTO buildDelegateDTO(final String relativeURL,
+                                        final Map<String, String> completePayloadHeader,
+                                        final HttpStatus httpSucessStatus) throws IOException {
+        return DelegateDTO.builder()
+                .targetSubscriptionKey(getApiSubscriptionKey()).authorizationToken(getAuthorizationToken())
+                .targetURL(relativeURL)
+                .inputPayload(TestingUtils.readFileContents(String.format(INPUT_FILE_PATH, getInputFileDirectory()) +
+                        "/" + getInputPayloadFileName()))
+                .standardHeaderMap(completePayloadHeader)
+                .headers(null)
+                .params(getUrlParams())
+                .httpMethod(getHttpMethod())
+                .status(httpSucessStatus)
+                .build();
+    }
 }

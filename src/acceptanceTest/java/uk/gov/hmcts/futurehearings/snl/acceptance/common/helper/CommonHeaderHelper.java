@@ -17,13 +17,13 @@ import org.springframework.http.MediaType;
 
 public class CommonHeaderHelper {
 
-    private static final String MOCK_DESTINATION_SYSTEM = "MOCK";
     private static final String SNL_DESTINATION_SYSTEM = "S&L";
     private static final String DESTINATION_SYSTEM = SNL_DESTINATION_SYSTEM;
+    public static final String CHARSET_UTF_8 = "; charset=UTF-8";
 
     public static final Map<String, String> createCompletePayloadHeader(final String subscriptionKey) {
 
-        return buildHeaderWithValues(MediaType.APPLICATION_JSON_VALUE+";charset=utf-8",
+        return buildHeaderWithValues(MediaType.APPLICATION_JSON_VALUE,
                 MediaType.APPLICATION_JSON_VALUE+";version=1.2",
                 subscriptionKey,
                 "no-cache",
@@ -38,7 +38,7 @@ public class CommonHeaderHelper {
 
     public static final Map<String, String> createStandardPayloadHeader(final String subscriptionKey) {
 
-        return buildHeaderWithValues(MediaType.APPLICATION_JSON_VALUE+";charset=utf-8",
+        return buildHeaderWithValues(MediaType.APPLICATION_JSON_VALUE,
                 MediaType.APPLICATION_JSON_VALUE+";version=1.2",
                 subscriptionKey,
                 "2012-03-19T07:22:00Z",

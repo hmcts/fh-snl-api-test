@@ -5,16 +5,14 @@ import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHea
 import uk.gov.hmcts.futurehearings.snl.Application;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.TestingUtils;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.delegate.dto.DelegateDTO;
-import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLDTO;
+import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.dto.SNLVerificationDTO;
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.error.SNLCommonErrorVerifier;
-import uk.gov.hmcts.futurehearings.snl.acceptance.sessions.verify.GETSessionByIdValidationVerifier;
 import uk.gov.hmcts.futurehearings.snl.acceptance.sessions.verify.GETSessionsValidationVerifier;
 
 import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -75,23 +73,21 @@ public class GETSessionsValidationTest extends SessionsValidationTest {
     }
 
     @Test
+    @DisplayName("Successfully validated response with an empty payload")
+    @Override
+    public void test_successful_response_for_empty_json_body() throws Exception {
+        return;
+    }
+
+    @Test
     @DisplayName("Successfully validated response with all the header values and Error Http Status as No Query params were passed.")
     void test_mandatory_query_parameter_not_provided () throws Exception {
 
-        DelegateDTO delegateDTO = DelegateDTO.builder()
-                .targetSubscriptionKey(getApiSubscriptionKey()).authorizationToken(getAuthorizationToken())
-                .targetURL(getRelativeURL())
-                .inputPayload(TestingUtils.readFileContents(String.format(INPUT_FILE_PATH, getInputFileDirectory()) +
-                        "/" + getInputPayloadFileName()))
-                .standardHeaderMap(createCompletePayloadHeader(getApiSubscriptionKey()))
-                .headers(null)
-                .params(getUrlParams())
-                .httpMethod(getHttpMethod())
-                .status(HttpStatus.BAD_REQUEST)
-                .build();
+        DelegateDTO delegateDTO = super.buildDelegateDTO(getRelativeURL(),
+                createCompletePayloadHeader(getApiSubscriptionKey()),HttpStatus.BAD_REQUEST);
         commonDelegate.test_expected_response_for_supplied_header(
                 delegateDTO,
                 getHmiSuccessVerifier(),
-                new SNLDTO(HttpStatus.BAD_REQUEST,null,null,null));
+                new SNLVerificationDTO(HttpStatus.BAD_REQUEST,null,null,null));
     }
 }

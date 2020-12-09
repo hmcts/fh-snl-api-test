@@ -13,7 +13,7 @@ public class GETSessionsValidationVerifier implements SNLSuccessVerifier {
 
     @Override
     public void verify(SNLDto snlDto, Response response) {
-        log.info(response.getBody().asString());
+        log.debug(response.getBody().asString());
         assertTrue(response.getBody().jsonPath().getMap("$").size() > 0);
     }
 }

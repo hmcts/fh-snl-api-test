@@ -44,7 +44,7 @@ public abstract class SessionsValidationTest extends SNLCommonHeaderTest {
         RestAssured.useRelaxedHTTPSValidation();
         this.setApiSubscriptionKey(targetSubscriptionKey);
         RestAssured.config = RestAssured.config()
-                .encoderConfig(encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false));
+                .encoderConfig(encoderConfig().defaultContentCharset("UTF-8").appendDefaultContentCharsetToContentTypeIfUndefined(true));
         this.setInputFileDirectory("sessions");
         String authorizationToken = generateOAuthToken(token_apiURL,
                 token_username,
