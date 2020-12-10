@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class SNLCommonErrorVerifier implements SNLErrorVerifier {
     public void verify(SNLDto snlDTO,
                        Response response) {
-        log.info("Response" + response.getBody().asString());
+        log.debug("Response" + response.getBody().prettyPrint());
         SNLVerificationDTO snlVerificationDTO = null;
         if (snlDTO instanceof SNLVerificationDTO) {
             snlVerificationDTO = (SNLVerificationDTO) snlDTO;
@@ -26,6 +26,5 @@ public class SNLCommonErrorVerifier implements SNLErrorVerifier {
         Map<String, ?> responseMap = response.getBody().jsonPath().getMap("$");
         assertEquals(snlVerificationDTO.errorCode(), responseMap.get("errCode"));
         assertEquals(snlVerificationDTO.errorDescription(), responseMap.get(("errorDesc")));
-
     }
 }

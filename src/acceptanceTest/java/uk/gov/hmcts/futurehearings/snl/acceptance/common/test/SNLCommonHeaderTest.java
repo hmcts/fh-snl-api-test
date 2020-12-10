@@ -4,7 +4,9 @@ import static io.restassured.config.EncoderConfig.encoderConfig;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createCompletePayloadHeader;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesEmpty;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithAllValuesNull;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithCorruptedHeaderKey;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithDestinationSystemValue;
+import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithRequestCreatedAtSystemValue;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createHeaderWithSourceSystemValue;
 import static uk.gov.hmcts.futurehearings.snl.acceptance.common.helper.CommonHeaderHelper.createStandardPayloadHeader;
 
@@ -16,6 +18,7 @@ import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.error.SNLErrorVe
 import uk.gov.hmcts.futurehearings.snl.acceptance.common.verify.success.SNLSuccessVerifier;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import io.restassured.RestAssured;
@@ -32,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -229,7 +233,7 @@ public abstract class SNLCommonHeaderTest {
 
 
     @ParameterizedTest(name = "Source System Header invalid values - Param : {0} --> {1}")
-    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Source_System, SNL","Invalid_Source_System, CfT", "Invalid_Source_System, S&amp;L"}, nullValues = "NIL")
+    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,''", "Invalid_Source_System, SNL", "Invalid_Source_System, CfT", "Invalid_Source_System, S&amp;L"}, nullValues = "NIL")
     void test_source_system_invalid_values(String sourceSystemKey, String sourceSystemVal) throws Exception {
         DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
                 createHeaderWithSourceSystemValue(getApiSubscriptionKey(), sourceSystemVal), HttpStatus.BAD_REQUEST);
@@ -249,59 +253,58 @@ public abstract class SNLCommonHeaderTest {
                 new SNLVerificationDTO(HttpStatus.BAD_REQUEST, null, null, null));
     }
 
-    /*
+
     @ParameterizedTest(name = "Request Created At System Header invalid values - Param : {0} --> {1}")
-    @CsvSource({"Null_Value, null", "Empty_Space,\" \"", "Invalid_Value, value",
+    @CsvSource(value = {"Null_Value, NIL", "Empty_Space,\" \"", "Invalid_Value, value",
             "Invalid_Date_Format, 2002-02-31T10:00:30-05:00Z",
             "Invalid_Date_Format, 2002-02-31T1000:30-05:00",
             "Invalid_Date_Format, 2002-02-31T10:00-30-05:00",
             "Invalid_Date_Format, 2002-10-02T15:00:00*05Z",
-            "Invalid_Date_Format, 2002-10-02 15:00?0005Z",
-            "Invalid_Date_Format, 2002-10-02T15:00:00",
-    })
-    @Disabled("Initial Setup")
+            "Invalid_Date_Format, 2002-10-02T15:00?0005Z",
+            "Invalid_Date_Format, 2002-10-02 15:00:00",
+    }, nullValues = "NIL")
     void test_request_created_at_invalid_values(String requestCreatedAtKey, String requestCreatedAtVal) throws Exception {
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), getInputPayloadFileName(),
-                createHeaderWithRequestCreatedAtSystemValue(getApiSubscriptionKey(), requestCreatedAtVal),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                HttpStatus.BAD_REQUEST,
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
+                createHeaderWithRequestCreatedAtSystemValue(getApiSubscriptionKey(), requestCreatedAtVal), HttpStatus.BAD_REQUEST);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
                 getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.BAD_REQUEST,null,null,null));
+                new SNLVerificationDTO(HttpStatus.BAD_REQUEST, null, null, null));
     }
 
 
     @ParameterizedTest(name = "Mandatory Keys truncated from the Header - Key : {0}")
-    @ValueSource(strings = {"Content-Type", "Accept", "Source-System",
-            "Destination-System", "Request-Created-At",
-            "Request-Processed-At", "Request-Type"})
-    @Disabled("Initial Setup")
+    @ValueSource(strings = {"Accept"})
+    //TODO - ADD The Following Headers once the HTTP Status validation is ßßfixed MCGIRRSD-1745
+    //"Source-System","Destination-System", "Request-Created-At","Request-Processed-At", "Request-Type"
+    //Content-Type is giving and Error Desc 'HTTP 415 Unsupported Media Type' while this could not be recreated in Postman.
     void test_header_keys_truncated(String keyToBeTruncated) throws Exception {
 
-        final HttpStatus httpStatus =
-                keyToBeTruncated.equalsIgnoreCase("Accept") ? HttpStatus.NOT_ACCEPTABLE : HttpStatus.BAD_REQUEST;
-        final String expectedErrorMessage =
-                keyToBeTruncated.equalsIgnoreCase("Accept") ||
-                        keyToBeTruncated.equalsIgnoreCase("Content-Type") ?
-                        "Missing/Invalid Media Type" : "Missing/Invalid Header " + keyToBeTruncated;
-
-        commonDelegate.test_expected_response_for_supplied_header(getApiSubscriptionKey(),
-                getAuthorizationToken(),
-                getRelativeURL(), getInputPayloadFileName(),
+        HttpStatus httpStatus = null;
+        SNLVerificationDTO snlVerificationDTO = null;
+        switch (keyToBeTruncated) {
+            case "Content-Type":
+                httpStatus = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+                snlVerificationDTO = new SNLVerificationDTO(httpStatus, "9999", "Expected header 'Content-Type=application/json; charset=utf-8'", null);
+                break;
+            case "Accept":
+            case "Source-System":
+            case "Destination-System":
+            case "Request-Created-At":
+            case "Request-Processed-At":
+            case "Request-Type":
+                httpStatus = HttpStatus.NOT_ACCEPTABLE;
+                snlVerificationDTO = new SNLVerificationDTO(httpStatus, "9999", "Expected header 'Accept=application/json; version=1.2'", null);
+                break;
+        }
+        DelegateDTO delegateDTO = buildDelegateDTO(getRelativeURL(),
                 createHeaderWithCorruptedHeaderKey(getApiSubscriptionKey(),
-                        Arrays.asList(keyToBeTruncated)),
-                null,
-                getUrlParams(),
-                getHttpMethod(),
-                httpStatus,
-                getHmiErrorVerifier(),
-                new SNLDTO(HttpStatus.BAD_REQUEST,null,null,null));
+                        Arrays.asList(keyToBeTruncated)), httpStatus);
+        commonDelegate.test_expected_response_for_supplied_header(delegateDTO,
+                getHmiErrorVerifier(), snlVerificationDTO);
+
     }
 
-
+    /*
     @ParameterizedTest(name = "Mandatory keys removed from the Header - Key : {0}")
     @ValueSource(strings = {"Content-Type", "Accept", "Source-System",
             "Destination-System", "Request-Created-At",

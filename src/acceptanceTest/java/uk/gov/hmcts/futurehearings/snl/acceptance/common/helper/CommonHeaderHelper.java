@@ -102,7 +102,7 @@ public class CommonHeaderHelper {
                 "2012-03-19T07:22:00Z",
                 "CFT",
                 DESTINATION_SYSTEM,
-                "Assault",
+                "text",
                 headersToBeTruncated
         );
     }
