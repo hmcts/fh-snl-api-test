@@ -265,7 +265,7 @@ dependencies {
         exclude group: 'org.hamcrest', module: 'hamcrest-core'
     }
     acceptanceTestCompile("org.springframework.boot:spring-boot-starter-test")
-    acceptanceTestImplementation group: 'io.rest-assured', name: 'xml-path', version: '4.2.0'
+    acceptanceTestImplementation group: 'io.rest-assured', name: 'xml-path', version: '4.3.3'
     acceptanceTestImplementation group: 'io.rest-assured', name: 'json-path', version: '4.2.0'
     acceptanceTestImplementation 'io.rest-assured:rest-assured:4.2.0'
     acceptanceTestImplementation 'io.rest-assured:json-schema-validator:4.2.0'
